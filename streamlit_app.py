@@ -1,7 +1,11 @@
 import streamlit as st
 import vertexai
 from vertexai.preview.language_models import ChatModel
-
+import utils
+from streaming import StreamHandler
+from langchain.chat_models import ChatVertexAI
+from langchain.chains import ConversationChain
+from langchain.memory import ConversationBufferMemory
 
 PROJECT_ID = "root-fort-398913"
 vertexai.init(project=PROJECT_ID, location="us-central1")
@@ -19,39 +23,25 @@ with st.sidebar:
     st.markdown(
         '📖 Learn how to build this app in this [blog](https://blog.streamlit.io/how-to-build-an-llm-powered-chatbot-with-streamlit/)!')
 
-# Store LLM generated responses
-if "messages" not in st.session_state.keys():
-    st.session_state.messages = [
-        {"role": "assistant", "content": "How may I help you?"}]
+class ContextChatbot:
+    @st.cache_resource
+    def setup_chain(_self):
+        memory = ConversationBufferMemory()
+        llm = ChatVertexAI(model_name=model_option, streaming=True)
+        chain = ConversationChain(llm=llm, memory=memory, verbose=True)
+        return chain
+    
+    @utils.enable_chat_history
+    def main(self):
+        chain = self.setup_chain()
+        user_query = st.chat_input(placeholder="Ask me anything!")
+        if user_query:
+            utils.display_msg(user_query, 'user')
+            with st.chat_message("assistant"):
+                st_cb = StreamHandler(st.empty())
+                response = chain.run(user_query, callbacks=[st_cb])
+                st.session_state.messages.append({"role": "assistant", "content": response})
 
-# Display chat messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.write(message["content"])
-
-# Function for generating LLM response
-
-
-def generate_response(prompt):
-    """Predict using a Large Language Model."""
-    model = ChatModel.from_pretrained(model_option)
-    chat = model.start_chat(examples=[])
-    response = chat.send_message(prompt)
-    output = response.text
-    return output
-
-
-# User-provided prompt
-if prompt := st.chat_input():
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.write(prompt)
-
-# Generate a new response if last message is not from assistant
-if st.session_state.messages[-1]["role"] != "assistant":
-    with st.chat_message("assistant"):
-        with st.spinner("Thinking..."):
-            response = generate_response(prompt)
-            st.write(response)
-    message = {"role": "assistant", "content": response}
-    st.session_state.messages.append(message)
+if __name__ == "__main__":
+    obj = ContextChatbot()
+    obj.main()
