@@ -1,14 +1,9 @@
 import streamlit as st
-import vertexai
-from vertexai.preview.language_models import ChatModel
 import utils
 from streaming import StreamHandler
 from langchain.chat_models import ChatVertexAI
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
-
-PROJECT_ID = "root-fort-398913"
-vertexai.init(project=PROJECT_ID, location="us-central1")
 
 # App title
 st.set_page_config(page_title="💬 ChatBot")
@@ -21,7 +16,8 @@ with st.sidebar:
 
     st.write('You selected:', model_option)
     st.markdown(
-        '📖 Learn how to build this app in this [blog](https://blog.streamlit.io/how-to-build-an-llm-powered-chatbot-with-streamlit/)!')
+        '📖 Learn how to build this app in this [Github]()!')
+
 
 class ContextChatbot:
     @st.cache_resource
@@ -30,7 +26,7 @@ class ContextChatbot:
         llm = ChatVertexAI(model_name=model_option, streaming=True)
         chain = ConversationChain(llm=llm, memory=memory, verbose=True)
         return chain
-    
+
     @utils.enable_chat_history
     def main(self):
         chain = self.setup_chain()
@@ -40,7 +36,9 @@ class ContextChatbot:
             with st.chat_message("assistant"):
                 st_cb = StreamHandler(st.empty())
                 response = chain.run(user_query, callbacks=[st_cb])
-                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response})
+
 
 if __name__ == "__main__":
     obj = ContextChatbot()
