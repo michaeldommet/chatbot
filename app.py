@@ -20,7 +20,7 @@ with st.sidebar:
 
 
 class ContextChatbot:
-    @st.cache_resource
+   # @st.cache_resource
     def setup_chain(_self):
         memory = ConversationBufferMemory()
         llm = ChatVertexAI(model_name=model_option, streaming=True)
