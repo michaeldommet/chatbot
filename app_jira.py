@@ -54,7 +54,8 @@ with st.sidebar:
 
 class Config():
     model = model_option
-    llm = ChatVertexAI(model_name=model, streaming=True)
+    memory = ConversationBufferMemory()
+    llm = ChatVertexAI(model_name=model, memory=memory, streaming=True)
 
 
 cfg = Config()
@@ -79,9 +80,9 @@ def generate_destination_chains():
             llm=cfg.llm,
             prompt=PromptTemplate(template=prompt_template, input_variables=['input']))
         destination_chains[name] = chain
-    memory = ConversationBufferMemory()
+
     default_chain = ConversationChain(
-        llm=cfg.llm, memory=memory, verbose=True, output_key="text")
+        llm=cfg.llm, verbose=True, output_key="text")
     return prompt_factory.prompt_infos, destination_chains, default_chain
 
 
